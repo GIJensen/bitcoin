@@ -627,7 +627,9 @@ void CNode::copyStats(CNodeStats &stats)
     X(fInbound);
     X(nStartingHeight);
     X(nSendBytes);
+    X(mapSendBytesPerCmd);
     X(nRecvBytes);
+    X(mapRecvBytesPerCmd);
     X(fWhitelisted);
 
     // It is common for nodes with good ping times to suddenly become lagged,
@@ -682,6 +684,13 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
         nBytes -= handled;
 
         if (msg.complete()) {
+
+            //store received bytes per command
+            //to prevent a memory DOS, only allow valid commands
+            mapCmdSize::iterator i = mapRecvBytesPerCmd.find(msg.hdr.pchCommand);
+            if (i != mapRecvBytesPerCmd.end())
+                i->second += msg.hdr.nMessageSize + CMessageHeader::HEADER_SIZE;
+
             msg.nTime = GetTimeMicros();
             messageHandlerCondition.notify_one();
         }
@@ -2339,6 +2348,13 @@ bool CAddrDB::Read(CAddrMan& addr)
 unsigned int ReceiveFloodSize() { return 1000*GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER); }
 unsigned int SendBufferSize() { return 1000*GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER); }
 
+//immutable thread safe array of allowed commands for logging inbound traffic
+const static std::string logAllowIncomingCmds[] = {
+    "version", "verack", "addr", "inv", "getdata",
+    "getblocks", "getheaders", "tx", "headers", "block",
+    "getaddr", "mempool", "ping", "pong", "alert",
+    "filterload", "filteradd", "filterclear", "reject"};
+
 CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNameIn, bool fInboundIn) :
     ssSend(SER_NETWORK, INIT_PROTO_VERSION),
     addrKnown(5000, 0.001),
@@ -2378,6 +2394,8 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     nPingUsecTime = 0;
     fPingQueued = false;
     nMinPingUsecTime = std::numeric_limits<int64_t>::max();
+    for (unsigned int i = 0; i < sizeof(logAllowIncomingCmds)/sizeof(logAllowIncomingCmds[0]); i++)
+        mapRecvBytesPerCmd[logAllowIncomingCmds[i]] = 0;
 
     {
         LOCK(cs_nLastNodeId);
@@ -2457,7 +2475,7 @@ void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
     LogPrint("net", "(aborted)\n");
 }
 
-void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
+void CNode::EndMessage(const char* pszCommand) UNLOCK_FUNCTION(cs_vSend)
 {
     // The -*messagestest options are intentionally not documented in the help message,
     // since they are only used during development to debug the networking code and are
@@ -2479,6 +2497,9 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     // Set the size
     unsigned int nSize = ssSend.size() - CMessageHeader::HEADER_SIZE;
     WriteLE32((uint8_t*)&ssSend[CMessageHeader::MESSAGE_SIZE_OFFSET], nSize);
+
+    //log total amount of bytes per command
+    mapSendBytesPerCmd[std::string(pszCommand)] += nSize + CMessageHeader::HEADER_SIZE;
 
     // Set the checksum
     uint256 hash = Hash(ssSend.begin() + CMessageHeader::HEADER_SIZE, ssSend.end());
