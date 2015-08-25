@@ -107,6 +107,14 @@ Value getpeerinfo(const Array& params, bool fHelp)
             "       n,                        (numeric) The heights of blocks we're currently asking from this peer\n"
             "       ...\n"
             "    ]\n"
+            "    \"bytessent_per_cmd\": {\n"
+            "       \"addr\": n,             (numeric) The total bytes sent aggregated by message command\n"
+            "       ...\n"
+            "    }\n"
+            "    \"bytesrecv_per_cmd\": {\n"
+            "       \"addr\": n,             (numeric) The total bytes received aggregated by message command\n"
+            "       ...\n"
+            "    }\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -158,6 +166,18 @@ Value getpeerinfo(const Array& params, bool fHelp)
             obj.push_back(Pair("inflight", heights));
         }
         obj.push_back(Pair("whitelisted", stats.fWhitelisted));
+
+        Object sendPerCmd;
+        BOOST_FOREACH(const mapCmdSize::value_type &i, stats.mapSendBytesPerCmd) {
+            sendPerCmd.push_back(Pair(i.first, i.second));
+        }
+        obj.push_back(Pair("bytessent_per_cmd", sendPerCmd));
+
+        Object recvPerCmd;
+        BOOST_FOREACH(const mapCmdSize::value_type &i, stats.mapRecvBytesPerCmd) {
+            recvPerCmd.push_back(Pair(i.first, i.second));
+        }
+        obj.push_back(Pair("bytesrecv_per_cmd", recvPerCmd));
 
         ret.push_back(obj);
     }
