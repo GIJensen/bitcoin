@@ -64,6 +64,15 @@ namespace {
     };
 }
 
+//immutable thread safe array of allowed commands for logging inbound traffic
+const static std::string logAllowIncomingCmds[] = {
+    "version", "verack", "addr", "inv", "getdata",
+    "getblocks", "getheaders", "tx", "headers", "block",
+    "getaddr", "mempool", "ping", "pong", "alert",
+    "filterload", "filteradd", "filterclear", "reject"};
+
+const static std::string NET_COMMAND_OTHER = "*other*";
+
 //
 // Global state variables
 //
@@ -568,8 +577,10 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
             //store received bytes per command
             //to prevent a memory DOS, only allow valid commands
             mapCmdSize::iterator i = mapRecvBytesPerCmd.find(msg.hdr.pchCommand);
-            if (i != mapRecvBytesPerCmd.end())
-                i->second += msg.hdr.nMessageSize + CMessageHeader::HEADER_SIZE;
+            if (i == mapRecvBytesPerCmd.end())
+                i = mapRecvBytesPerCmd.find(NET_COMMAND_OTHER);
+            assert(i != mapRecvBytesPerCmd.end());
+            i->second += msg.hdr.nMessageSize + CMessageHeader::HEADER_SIZE;
 
             msg.nTime = GetTimeMicros();
             messageHandlerCondition.notify_one();
@@ -1952,13 +1963,6 @@ bool CAddrDB::Read(CAddrMan& addr)
 unsigned int ReceiveFloodSize() { return 1000*GetArg("-maxreceivebuffer", 5*1000); }
 unsigned int SendBufferSize() { return 1000*GetArg("-maxsendbuffer", 1*1000); }
 
-//immutable thread safe array of allowed commands for logging inbound traffic
-const static std::string logAllowIncomingCmds[] = {
-    "version", "verack", "addr", "inv", "getdata",
-    "getblocks", "getheaders", "tx", "headers", "block",
-    "getaddr", "mempool", "ping", "pong", "alert",
-    "filterload", "filteradd", "filterclear", "reject"};
-
 CNode::CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn, bool fInboundIn) :
     ssSend(SER_NETWORK, INIT_PROTO_VERSION),
     addrKnown(5000, 0.001),
@@ -1998,6 +2002,7 @@ CNode::CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn, bool fIn
     fPingQueued = false;
     for (unsigned int i = 0; i < sizeof(logAllowIncomingCmds)/sizeof(logAllowIncomingCmds[0]); i++)
         mapRecvBytesPerCmd[logAllowIncomingCmds[i]] = 0;
+    mapRecvBytesPerCmd[NET_COMMAND_OTHER] = 0;
 
     {
         LOCK(cs_nLastNodeId);
