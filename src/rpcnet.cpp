@@ -169,13 +169,15 @@ Value getpeerinfo(const Array& params, bool fHelp)
 
         Object sendPerCmd;
         BOOST_FOREACH(const mapCmdSize::value_type &i, stats.mapSendBytesPerCmd) {
-            sendPerCmd.push_back(Pair(i.first, i.second));
+            if (i.second > 0)
+                sendPerCmd.push_back(Pair(i.first, i.second));
         }
         obj.push_back(Pair("bytessent_per_cmd", sendPerCmd));
 
         Object recvPerCmd;
         BOOST_FOREACH(const mapCmdSize::value_type &i, stats.mapRecvBytesPerCmd) {
-            recvPerCmd.push_back(Pair(i.first, i.second));
+            if (i.second > 0)
+                recvPerCmd.push_back(Pair(i.first, i.second));
         }
         obj.push_back(Pair("bytesrecv_per_cmd", recvPerCmd));
 
