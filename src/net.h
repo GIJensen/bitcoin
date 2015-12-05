@@ -182,7 +182,7 @@ struct LocalServiceInfo {
 
 extern CCriticalSection cs_mapLocalHost;
 extern std::map<CNetAddr, LocalServiceInfo> mapLocalHost;
-typedef std::map<std::string, uint64_t > mapCmdSize; //command, total bytes
+typedef std::map<std::string, uint64_t > mapMsgCmdSize; //command, total bytes
 
 class CNodeStats
 {
@@ -200,9 +200,9 @@ public:
     bool fInbound;
     int nStartingHeight;
     uint64_t nSendBytes;
-    mapCmdSize mapSendBytesPerCmd;
+    mapMsgCmdSize mapSendBytesPerMsgCmd;
     uint64_t nRecvBytes;
-    mapCmdSize mapRecvBytesPerCmd;
+    mapMsgCmdSize mapRecvBytesPerMsgCmd;
     bool fWhitelisted;
     double dPingTime;
     double dPingWait;
@@ -376,8 +376,8 @@ protected:
     static std::vector<CSubNet> vWhitelistedRange;
     static CCriticalSection cs_vWhitelistedRange;
 
-    mapCmdSize mapSendBytesPerCmd;
-    mapCmdSize mapRecvBytesPerCmd;
+    mapMsgCmdSize mapSendBytesPerMsgCmd;
+    mapMsgCmdSize mapRecvBytesPerMsgCmd;
 
     // Basic fuzz-testing
     void Fuzz(int nChance); // modifies ssSend

@@ -111,11 +111,11 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             "       n,                        (numeric) The heights of blocks we're currently asking from this peer\n"
             "       ...\n"
             "    ]\n"
-            "    \"bytessent_per_cmd\": {\n"
+            "    \"bytessent_per_msg\": {\n"
             "       \"addr\": n,             (numeric) The total bytes sent aggregated by message command\n"
             "       ...\n"
             "    }\n"
-            "    \"bytesrecv_per_cmd\": {\n"
+            "    \"bytesrecv_per_msg\": {\n"
             "       \"addr\": n,             (numeric) The total bytes received aggregated by message command\n"
             "       ...\n"
             "    }\n"
@@ -173,19 +173,19 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
         }
         obj.push_back(Pair("whitelisted", stats.fWhitelisted));
 
-        UniValue sendPerCmd(UniValue::VOBJ);
-        BOOST_FOREACH( const mapCmdSize::value_type &i, stats.mapSendBytesPerCmd) {
+        UniValue sendPerMsgCmd(UniValue::VOBJ);
+        BOOST_FOREACH( const mapMsgCmdSize::value_type &i, stats.mapSendBytesPerMsgCmd) {
             if (i.second > 0)
-                sendPerCmd.push_back(Pair(i.first, i.second));
+                sendPerMsgCmd.push_back(Pair(i.first, i.second));
         }
-        obj.push_back(Pair("bytessent_per_cmd", sendPerCmd));
+        obj.push_back(Pair("bytessent_per_msg", sendPerMsgCmd));
 
         UniValue recvPerCmd(UniValue::VOBJ);
-        BOOST_FOREACH( const mapCmdSize::value_type &i, stats.mapRecvBytesPerCmd) {
+        BOOST_FOREACH( const mapMsgCmdSize::value_type &i, stats.mapRecvBytesPerMsgCmd) {
             if (i.second > 0)
                 recvPerCmd.push_back(Pair(i.first, i.second));
         }
-        obj.push_back(Pair("bytesrecv_per_cmd", recvPerCmd));
+        obj.push_back(Pair("bytesrecv_per_msg", recvPerCmd));
 
         ret.push_back(obj);
     }
