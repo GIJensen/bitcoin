@@ -65,13 +65,13 @@ namespace {
 }
 
 //immutable thread safe array of allowed commands for logging inbound traffic
-const static std::string logAllowIncomingCmds[] = {
+const static std::string logAllowIncomingMsgCmds[] = {
     "version", "addr", "inv", "getdata", "merkleblock",
     "getblocks", "getheaders", "tx", "headers", "block",
     "getaddr", "mempool", "ping", "pong", "alert", "notfound",
     "filterload", "filteradd", "filterclear", "reject"};
 
-const static std::string NET_COMMAND_OTHER = "*other*";
+const static std::string NET_MESSAGE_COMMAND_OTHER = "*other*";
 
 //
 // Global state variables
@@ -517,9 +517,9 @@ void CNode::copyStats(CNodeStats &stats)
     X(fInbound);
     X(nStartingHeight);
     X(nSendBytes);
-    X(mapSendBytesPerCmd);
+    X(mapSendBytesPerMsgCmd);
     X(nRecvBytes);
-    X(mapRecvBytesPerCmd);
+    X(mapRecvBytesPerMsgCmd);
     X(fWhitelisted);
 
     // It is common for nodes with good ping times to suddenly become lagged,
@@ -574,12 +574,12 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
 
         if (msg.complete()) {
 
-            //store received bytes per command
+            //store received bytes per message command
             //to prevent a memory DOS, only allow valid commands
-            mapCmdSize::iterator i = mapRecvBytesPerCmd.find(msg.hdr.pchCommand);
-            if (i == mapRecvBytesPerCmd.end())
-                i = mapRecvBytesPerCmd.find(NET_COMMAND_OTHER);
-            assert(i != mapRecvBytesPerCmd.end());
+            mapMsgCmdSize::iterator i = mapRecvBytesPerMsgCmd.find(msg.hdr.pchCommand);
+            if (i == mapRecvBytesPerMsgCmd.end())
+                i = mapRecvBytesPerMsgCmd.find(NET_MESSAGE_COMMAND_OTHER);
+            assert(i != mapRecvBytesPerMsgCmd.end());
             i->second += msg.hdr.nMessageSize + CMessageHeader::HEADER_SIZE;
 
             msg.nTime = GetTimeMicros();
@@ -2000,9 +2000,9 @@ CNode::CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn, bool fIn
     nPingUsecStart = 0;
     nPingUsecTime = 0;
     fPingQueued = false;
-    for (unsigned int i = 0; i < sizeof(logAllowIncomingCmds)/sizeof(logAllowIncomingCmds[0]); i++)
-        mapRecvBytesPerCmd[logAllowIncomingCmds[i]] = 0;
-    mapRecvBytesPerCmd[NET_COMMAND_OTHER] = 0;
+    for (unsigned int i = 0; i < sizeof(logAllowIncomingMsgCmds)/sizeof(logAllowIncomingMsgCmds[0]); i++)
+        mapRecvBytesPerMsgCmd[logAllowIncomingMsgCmds[i]] = 0;
+    mapRecvBytesPerMsgCmd[NET_MESSAGE_COMMAND_OTHER] = 0;
 
     {
         LOCK(cs_nLastNodeId);
@@ -2102,7 +2102,7 @@ void CNode::EndMessage(const char* pszCommand) UNLOCK_FUNCTION(cs_vSend)
     WriteLE32((uint8_t*)&ssSend[CMessageHeader::MESSAGE_SIZE_OFFSET], nSize);
 
     //log total amount of bytes per command
-    mapSendBytesPerCmd[std::string(pszCommand)] += nSize + CMessageHeader::HEADER_SIZE;
+    mapSendBytesPerMsgCmd[std::string(pszCommand)] += nSize + CMessageHeader::HEADER_SIZE;
 
     // Set the checksum
     uint256 hash = Hash(ssSend.begin() + CMessageHeader::HEADER_SIZE, ssSend.end());

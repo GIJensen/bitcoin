@@ -107,11 +107,11 @@ Value getpeerinfo(const Array& params, bool fHelp)
             "       n,                        (numeric) The heights of blocks we're currently asking from this peer\n"
             "       ...\n"
             "    ]\n"
-            "    \"bytessent_per_cmd\": {\n"
+            "    \"bytessent_per_msg\": {\n"
             "       \"addr\": n,             (numeric) The total bytes sent aggregated by message command\n"
             "       ...\n"
             "    }\n"
-            "    \"bytesrecv_per_cmd\": {\n"
+            "    \"bytesrecv_per_msg\": {\n"
             "       \"addr\": n,             (numeric) The total bytes received aggregated by message command\n"
             "       ...\n"
             "    }\n"
@@ -167,19 +167,19 @@ Value getpeerinfo(const Array& params, bool fHelp)
         }
         obj.push_back(Pair("whitelisted", stats.fWhitelisted));
 
-        Object sendPerCmd;
-        BOOST_FOREACH(const mapCmdSize::value_type &i, stats.mapSendBytesPerCmd) {
+        Object sendPerMsgCmd;
+        BOOST_FOREACH(const mapMsgCmdSize::value_type &i, stats.mapSendBytesPerMsgCmd) {
             if (i.second > 0)
-                sendPerCmd.push_back(Pair(i.first, i.second));
+                sendPerMsgCmd.push_back(Pair(i.first, i.second));
         }
-        obj.push_back(Pair("bytessent_per_cmd", sendPerCmd));
+        obj.push_back(Pair("bytessent_per_msg", sendPerMsgCmd));
 
-        Object recvPerCmd;
-        BOOST_FOREACH(const mapCmdSize::value_type &i, stats.mapRecvBytesPerCmd) {
+        Object recvPerMsgCmd;
+        BOOST_FOREACH(const mapMsgCmdSize::value_type &i, stats.mapRecvBytesPerMsgCmd) {
             if (i.second > 0)
-                recvPerCmd.push_back(Pair(i.first, i.second));
+                recvPerMsgCmd.push_back(Pair(i.first, i.second));
         }
-        obj.push_back(Pair("bytesrecv_per_cmd", recvPerCmd));
+        obj.push_back(Pair("bytesrecv_per_msg", recvPerMsgCmd));
 
         ret.push_back(obj);
     }
