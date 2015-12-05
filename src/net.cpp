@@ -66,9 +66,9 @@ namespace {
 
 //immutable thread safe array of allowed commands for logging inbound traffic
 const static std::string logAllowIncomingCmds[] = {
-    "version", "verack", "addr", "inv", "getdata",
+    "version", "addr", "inv", "getdata", "merkleblock",
     "getblocks", "getheaders", "tx", "headers", "block",
-    "getaddr", "mempool", "ping", "pong", "alert",
+    "getaddr", "mempool", "ping", "pong", "alert", "notfound",
     "filterload", "filteradd", "filterclear", "reject"};
 
 const static std::string NET_COMMAND_OTHER = "*other*";
