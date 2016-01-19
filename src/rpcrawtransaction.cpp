@@ -111,7 +111,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     }
 }
 
-Value searchrawtransactions(const Array &params, bool fHelp)
+UniValue searchrawtransactions(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error("searchrawtransactions <address> [verbose=1] [skip=0] [count=100]\n");
